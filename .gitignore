@@ -1,0 +1,10 @@
+account.hcl
+terraform.tfstate*
+*.terraform*
+*.terragrunt-cache*
+.DS_Store
+*.cache*
+__pycache__
+.wget-hsts
+.bash_history
+**.zip
