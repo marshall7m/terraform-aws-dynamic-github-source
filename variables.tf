@@ -93,7 +93,7 @@ EOF
       file_paths             = optional(list(string))
       exclude_matched_filter = optional(bool)
     })))
-    
+
     codebuild_cfg = optional(object({
       buildspec = optional(string)
       timeout   = optional(string)
@@ -307,6 +307,17 @@ variable "codebuild_role_arn" {
   default     = null
 }
 
+variable "codebuild_role_policy_statements" {
+  description = "IAM policy statements to add to CodeBuild project's role"
+  type = list(object({
+    sid       = optional(string)
+    effect    = string
+    actions   = list(string)
+    resources = list(string)
+  }))
+  default = []
+}
+
 variable "codebuild_tags" {
   description = "Tags to attach to Codebuild project"
   type        = map(string)
@@ -318,8 +329,8 @@ variable "codebuild_create_source_auth" {
 Determines if a CodeBuild source credential resource should be created. Only one credential
 resource is needed/allowed per AWS account and region. See more at: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_codebuild.GitHubSourceCredentials.html
 EOF
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 # AGW #

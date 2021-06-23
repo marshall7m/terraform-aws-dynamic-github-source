@@ -31,19 +31,19 @@ module "github_webhook_request_validator" {
 
   api_name        = var.api_name
   api_description = var.api_description
-  repos                           = [ for repo in var.repos: {
-    name = repo.name
+  repos = [for repo in var.repos : {
+    name          = repo.name
     filter_groups = repo.filter_groups
   }]
-  github_secret_ssm_key           = var.github_secret_ssm_key         #tfsec:ignore:GEN003
-  github_secret_ssm_description   = var.github_secret_ssm_description #tfsec:ignore:GEN003
-  github_secret_ssm_tags          = var.github_secret_ssm_tags
+  github_secret_ssm_key         = var.github_secret_ssm_key         #tfsec:ignore:GEN003
+  github_secret_ssm_description = var.github_secret_ssm_description #tfsec:ignore:GEN003
+  github_secret_ssm_tags        = var.github_secret_ssm_tags
 
   create_github_token_ssm_param = var.create_github_token_ssm_param
-  github_token_ssm_description = var.github_token_ssm_description
-  github_token_ssm_key = var.github_token_ssm_key
-  github_token_ssm_value = var.github_token_ssm_value
-  github_token_ssm_tags = var.github_token_ssm_tags
+  github_token_ssm_description  = var.github_token_ssm_description
+  github_token_ssm_key          = var.github_token_ssm_key
+  github_token_ssm_value        = var.github_token_ssm_value
+  github_token_ssm_tags         = var.github_token_ssm_tags
 
   lambda_success_destination_arns = [module.lambda_trigger_codebuild.function_arn]
   async_lambda_invocation         = true
@@ -83,7 +83,7 @@ module "lambda_trigger_codebuild" {
     }
   ]
   enable_cw_logs = true
-  
+
   env_vars = {
     CODEBUILD_NAME = var.codebuild_name
   }
@@ -99,7 +99,7 @@ module "codebuild" {
   name        = var.codebuild_name
   description = var.codebuild_description
 
-  create_source_auth = var.codebuild_create_source_auth
+  create_source_auth      = var.codebuild_create_source_auth
   source_auth_token       = var.github_token_ssm_value
   source_auth_server_type = "GITHUB"
   source_auth_type        = "PERSONAL_ACCESS_TOKEN"
@@ -121,6 +121,7 @@ module "codebuild" {
   s3_log_encryption_disabled = var.codebuild_s3_log_encryption
   cw_logs                    = var.enable_codebuild_cw_logs
   role_arn                   = var.codebuild_role_arn
+  role_policy_statements     = var.codebuild_role_policy_statements
 }
 
 data "archive_file" "lambda_function" {
