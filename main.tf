@@ -31,12 +31,21 @@ module "github_webhook_request_validator" {
 
   api_name        = var.api_name
   api_description = var.api_description
-  #TODO: index only attr needed for module
-  repos                           = var.repos
+  repos                           = [ for repo in var.repos: {
+    name = repo.name
+    filter_groups = repo.filter_groups
+  }]
   github_secret_ssm_key           = var.github_secret_ssm_key         #tfsec:ignore:GEN003
   github_secret_ssm_description   = var.github_secret_ssm_description #tfsec:ignore:GEN003
   github_secret_ssm_tags          = var.github_secret_ssm_tags
-  lambda_success_destination_arns = [module.lambda.function_arn]
+
+  create_github_token_ssm_param = var.create_github_token_ssm_param
+  github_token_ssm_description = var.github_token_ssm_description
+  github_token_ssm_key = var.github_token_ssm_key
+  github_token_ssm_value = var.github_token_ssm_value
+  github_token_ssm_tags = var.github_token_ssm_tags
+
+  lambda_success_destination_arns = [module.lambda_trigger_codebuild.function_arn]
   async_lambda_invocation         = true
 }
 
@@ -55,8 +64,33 @@ data "aws_iam_policy_document" "lambda" {
 }
 
 resource "aws_iam_policy" "lambda" {
-  name   = var.function_name
+  name   = var.lambda_trigger_codebuild_function_name
   policy = data.aws_iam_policy_document.lambda.json
+}
+
+module "lambda_trigger_codebuild" {
+  source           = "github.com/marshall7m/terraform-aws-lambda"
+  filename         = data.archive_file.lambda_function.output_path
+  source_code_hash = data.archive_file.lambda_function.output_base64sha256
+  function_name    = var.lambda_trigger_codebuild_function_name
+  handler          = "lambda_function.lambda_handler"
+  runtime          = "python3.8"
+  allowed_to_invoke = [
+    {
+      statement_id = "LambdaInvokeAccess"
+      principal    = "lambda.amazonaws.com"
+      arn          = module.github_webhook_request_validator.function_arn
+    }
+  ]
+  enable_cw_logs = true
+  
+  env_vars = {
+    CODEBUILD_NAME = var.codebuild_name
+  }
+  custom_role_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+    aws_iam_policy.lambda.arn
+  ]
 }
 
 module "codebuild" {
@@ -65,6 +99,7 @@ module "codebuild" {
   name        = var.codebuild_name
   description = var.codebuild_description
 
+  create_source_auth = var.codebuild_create_source_auth
   source_auth_token       = var.github_token_ssm_value
   source_auth_server_type = "GITHUB"
   source_auth_type        = "PERSONAL_ACCESS_TOKEN"
@@ -97,9 +132,8 @@ data "archive_file" "lambda_function" {
   ]
 }
 
-#using lambda layer file for codebuild override cfg given lambda functions have a size limit of 4KB for env vars and easier parsing
 resource "local_file" "repo_cfg" {
-  content = jsonencode({ for repo in local.repos :
+  content = jsonencode({ for repo in var.repos :
     repo.name => {
       #converts terraform codebuild params to python boto3 start_build() params
       codebuild_cfg = repo.codebuild_cfg != null ? { for key in keys(repo.codebuild_cfg) : local.codebuild_override_keys[key] => lookup(repo.codebuild_cfg, key) if lookup(repo.codebuild_cfg, key) != null } : {}

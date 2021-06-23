@@ -17,15 +17,13 @@ def lambda_handler(event, context):
         - Lambda Function must be invoked asynchronously
         - Payload body must be mapped to the key `body`
         - Payload headers must be mapped to the key `headers`
-        - SSM Paramter Store value for Codebuild project name : Parameter key must be specified under Lambda's env var: `CODEBUILD_NAME`
-        - CodeBuild override params must be specified in /opt/repo_cfg.json
     """
 
     payload = json.loads(event['requestPayload']['body'])
     event = event['requestPayload']['headers']['X-GitHub-Event']
     repo_name = payload['repository']['name']
-
-    with open('/opt/repo_cfg.json') as f:
+    
+    with open(f'{os.getcwd()}/repo_cfg.json') as f:
       repo_cfg = json.load(f)[repo_name]
 
     if event == "pull_request":

@@ -13,10 +13,13 @@ locals {
 
   before_hook = <<-EOF
   %{if try(local.provider_switches.locals.include_github, false)}
-  if [[ -z $GITHUB_TOKEN ]]; then echo Getting Github Token && export GITHUB_TOKEN=$(pass github/token); fi 
+  if [[ -z $GITHUB_TOKEN ]]; then 
+    echo Getting Github Token; 
+    export GITHUB_TOKEN=$(pass github/token);
+  fi 
   %{endif}
   if [[ -z $SKIP_TFENV ]]; then 
-  echo Scanning Terraform files for Terraform binary version constraint 
+  echo Scanning Terraform files for Terraform binary version constraint;
   tfenv use min-required || tfenv install min-required \
   && tfenv use min-required
   else 

@@ -8,6 +8,12 @@ variable "common_tags" {
 
 ## github-token ##
 
+variable "create_github_token_ssm_param" {
+  description = "Determines if an AWS System Manager Parameter Store value should be created for the Github token"
+  type        = bool
+  default     = true
+}
+
 variable "github_token_ssm_description" {
   description = "Github token SSM parameter description"
   type        = string
@@ -61,12 +67,33 @@ List of named repos to create github webhooks for and their respective filter gr
 what type of activity will trigger the associated Codebuild.
 Params:
   `name`: Repository name
+  `filter_groups`: {
+    `events` - List of Github Webhook events that will invoke the API. Currently only supports: `push` and `pull_request`.
+    `pr_actions` - List of pull request actions (e.g. opened, edited, reopened, closed). See more under the action key at: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request
+    `base_refs` - List of base refs
+    `head_refs` - List of head refs
+    `actor_account_ids` - List of Github user IDs
+    `commit_messages` - List of commit messages
+    `file_paths` - List of file paths
+    `exclude_matched_filter` - If set to true, labels filter group as invalid if it is matched
+  }
   `codebuild_cfg`: CodeBuild configurations specifically for the repository
 EOF
 
   type = list(object({
     name = string
 
+    filter_groups = optional(list(object({
+      events                 = list(string)
+      pr_actions             = optional(list(string))
+      base_refs              = optional(list(string))
+      head_refs              = optional(list(string))
+      actor_account_ids      = optional(list(string))
+      commit_messages        = optional(list(string))
+      file_paths             = optional(list(string))
+      exclude_matched_filter = optional(bool)
+    })))
+    
     codebuild_cfg = optional(object({
       buildspec = optional(string)
       timeout   = optional(string)
@@ -127,10 +154,10 @@ EOF
 
 # Lambda #
 
-variable "function_name" {
-  description = "Name of AWS Lambda function"
+variable "lambda_trigger_codebuild_function_name" {
+  description = "Name of AWS Lambda function that will start the AWS CodeBuild with the override configurations"
   type        = string
-  default     = "github-webhook-payload-validator"
+  default     = "infrastructure-modules-ci-trigger-build"
 }
 
 # Codebuild #
@@ -138,6 +165,7 @@ variable "function_name" {
 variable "codebuild_name" {
   description = "Name of Codebuild project"
   type        = string
+  default     = "infrastructure-modules-ci-build"
 }
 
 variable "codebuild_description" {
@@ -283,6 +311,15 @@ variable "codebuild_tags" {
   description = "Tags to attach to Codebuild project"
   type        = map(string)
   default     = {}
+}
+
+variable "codebuild_create_source_auth" {
+  description = <<EOF
+Determines if a CodeBuild source credential resource should be created. Only one credential
+resource is needed/allowed per AWS account and region. See more at: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_codebuild.GitHubSourceCredentials.html
+EOF
+  type = bool
+  default = false
 }
 
 # AGW #

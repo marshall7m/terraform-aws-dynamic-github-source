@@ -4,22 +4,22 @@ output "api_invoke_url" {
 }
 
 output "request_validator_function_arn" {
-  description = "ARN of the Lambda function that validates the Github request"
+  description = "ARN of the Lambda function that validates incoming requests"
   value       = module.github_webhook_request_validator.function_arn
 }
 
 output "request_validator_cw_log_group_arn" {
-  description = "Name of the Cloudwatch log group associated with the request validator Lambda Function"
-  value       = module.lambda.cw_log_group_arn
+  description = "ARN of the Cloudwatch log group associated with the Lambda function that validates the incoming requests"
+  value       = module.lambda_trigger_codebuild.cw_log_group_arn
 }
 
-output "payload_validator_function_arn" {
-  description = "ARN of the Lambda function that validates the Github payload"
-  value       = module.lambda.function_arn
+output "trigger_codebuild_function_arn" {
+  description = "ARN of the Lambda function that triggers the downstream CodeBuild project with repo specific configurations"
+  value       = module.lambda_trigger_codebuild.function_arn
 }
 
-output "payload_validator_cw_log_group_arn" {
-  description = "Name of the Cloudwatch log group associated with the payload validator Lambda Function"
+output "trigger_codebuild_cw_log_group_arn" {
+  description = "ARN of the Cloudwatch log group associated with the Lambda function that triggers the downstream CodeBuild project"
   value       = module.github_webhook_request_validator.cw_log_group_arn
 }
 

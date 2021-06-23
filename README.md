@@ -2,19 +2,19 @@
 
 ## Problem ##
 
-Current implementation of AWS CodeBuild doesn't allow for dynamic repo and branch source. CodeBuild does allow for up to 12 secondary sources, although the buildspec would have to have additional logic to explicitly switch to the secondary source that was trigger via the CodeBuild Webhook. Another painful workaround is to create a Codebuild project for each repository. If each repo requires the same CodeBuild configurations, this can lead to multiple copies of the same CodeBuild project but with different sources. This can consequently clutter your AWS CodeBuild workspace especially if there are hundreds of repositories are included in this process.
+Current implementation of AWS CodeBuild (as of: 6/19/21) doesn't allow for dynamic repo and branch source. CodeBuild does allow for up to 12 secondary sources, although the buildspec would have to have additional logic to explicitly switch to the secondary source that was trigger via the CodeBuild Webhook. Another painful workaround is to create a Codebuild project for each repository. If each repo requires the same CodeBuild configurations, this can lead to multiple copies of the same CodeBuild project but with different sources. This can consequently clutter your AWS CodeBuild workspace especially if there are hundreds of repositories are included in this process.
 
 ## Process ##
 
-#TODO: Add CloudCraft flow diagram here
+![cloudcraft](cloudcraft.png)
 
 ### Steps ###
 
 1. Github event is performed (e.g. user pushes new file, opens PR, etc.) that falls under one of the repository's event filters
 2. Github webhook sends a POST HTTP method request to the API Gateway's (AGW) REST API 
 3. AGW request integration maps the request to a format friendly format `{'headers': <Webhook headers>, 'body': <Webhook payload>}` Processed request is passed to the request validator function.
-4. Request validator function compares the `sha256` value from the request header with the `sha256` value created with the Github secret value and request payload. If the values are are not equal, then an error response is sent to the Github webhook. If the values are not equal, the Lambda function validates the payload against the filter groups defined for that repository. If the payload passes atleast one filter group, then the Lambda function succeeds, delivers a status code `200` response to the Github webhook and lastly triggers any downstream services. 
-5. The payload validator Lambda function is invoked asynchronously on success of the request validor Lambda Function. Payload validator function compares the payload to the filter groups. If the payload passes one of the filter groups, the Codebuild project is kicked off with the triggered repository's CodeBuild configurations ONLY for this build (after this build, CodeBuild project reverts to original configurations). The main attribute that is changed is the source configurations for the build. 
+4. Request validator function compares the `sha256` value from the request header with the `sha256` value created with the Github secret value and request payload. If the values are are not equal, then an error response is sent to the Github webhook. If the values are not equal, the Lambda function validates the payload against the filter groups defined for that repository. If the payload passes atleast one filter group, then the Lambda function succeeds invokes the next Lambda function asynchronously.
+5. The second Lambda function triggers the Codebuild project with the repository's respective CodeBuild configurations ONLY for that build (after this build, CodeBuild project reverts to original configurations). The main attribute that is changed is the source configurations for the build which allow one CodeBuild to use a dynamic source.
 6. CodeBuild performs the defined buildspec logic. User can define a global or repo-level buildspec that can be used for CI/CD, building AMIs, etc. 
 
 ## Non-Provider related Requirements
@@ -26,7 +26,7 @@ Minimal viable configuration:
 
 ```
 module "dynamic_github_source" {
-  source                         = "github.com/marshall7m/terraform-aws-codebuild/modules//dynamic-github-source"
+  source                         = "github.com/marshall7m/terraform-aws-infrastructure-modules-ci"
   create_github_secret_ssm_param = true
   github_secret_ssm_value        = var.github_secret_ssm_value
   github_token_ssm_value         = var.github_token
@@ -48,7 +48,7 @@ Configure repo specific codebuild configurations via `codebuild_cfg` within `rep
 
 ```
 module "dynamic_github_source" {
-  source                         = "github.com/marshall7m/terraform-aws-codebuild/modules//dynamic-github-source"
+  source                         = "github.com/marshall7m/terraform-aws-infrastructure-modules-ci"
   create_github_secret_ssm_param = true
   github_secret_ssm_value        = var.github_secret_ssm_value
   github_token_ssm_value         = var.github_token
@@ -155,3 +155,5 @@ module "dynamic_github_source" {
   - Checks if commit is within time period via Lambda function
 
 ## TODO:
+- Add CodeBuild report group to check if test buildspec succeeds
+  - Use build-in terraform test resource to check report group status

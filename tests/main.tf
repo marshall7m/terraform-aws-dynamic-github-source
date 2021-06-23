@@ -1,19 +1,9 @@
 locals {
-  mut = basename(path.cwd)
-}
-
-provider "random" {}
-
-resource "random_password" "this" {
-  length = 20
-}
-
-resource "random_id" "default" {
-  byte_length = 8
+  mut = "mut-terraform-aws-infrastructure-modules-ci"
 }
 
 resource "github_repository" "test" {
-  name        = "${local.mut}-${random_id.default.id}"
+  name        = local.mut
   description = "Test repo for mut: ${local.mut}"
   auto_init   = true
   visibility  = "public"
@@ -27,9 +17,7 @@ resource "github_repository_file" "test_pr" {
   commit_message      = "test file"
   overwrite_on_create = true
   depends_on = [
-    module.mut_dynamic_github_source,
-    aws_cloudwatch_log_metric_filter.request_validator_errors,
-    aws_cloudwatch_log_metric_filter.payload_validator_errors
+    module.mut_dynamic_github_source
   ]
 }
 
@@ -46,9 +34,7 @@ resource "github_repository_pull_request" "test_pr" {
   title           = "Test webhook PR filter"
   body            = "Check Cloudwatch logs for results"
   depends_on = [
-    github_repository_file.test_pr,
-    aws_cloudwatch_log_metric_filter.request_validator_errors,
-    aws_cloudwatch_log_metric_filter.payload_validator_errors
+    github_repository_file.test_pr
   ]
 }
 
@@ -60,16 +46,16 @@ resource "github_repository_file" "test_push" {
   commit_message      = "test webhook push filter"
   overwrite_on_create = true
   depends_on = [
-    aws_cloudwatch_log_metric_filter.request_validator_errors,
-    aws_cloudwatch_log_metric_filter.payload_validator_errors,
     module.mut_dynamic_github_source
   ]
 }
 
 module "mut_dynamic_github_source" {
   source                 = "..//"
-  github_token_ssm_value = var.github_token
-  codebuild_name         = "${local.mut}-${random_id.default.id}"
+
+  create_github_token_ssm_param = false
+  github_token_ssm_key = "github-webhook-request-validator-github-token"
+  codebuild_name         = local.mut
   codebuild_buildspec    = file("buildspec.yaml")
   repos = [
     {
@@ -97,6 +83,7 @@ module "mut_dynamic_github_source" {
       ]
     }
   ]
+
   depends_on = [
     github_repository.test
   ]
