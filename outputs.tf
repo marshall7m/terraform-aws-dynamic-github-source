@@ -1,6 +1,6 @@
-output "api_invoke_url" {
+output "api_deployment_invoke_url" {
   description = "API invoke URL the github webhook will ping"
-  value       = module.github_webhook_request_validator.invoke_url
+  value       = module.github_webhook_request_validator.deployment_invoke_url
 }
 
 output "request_validator_function_arn" {
