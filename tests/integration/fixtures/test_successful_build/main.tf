@@ -12,7 +12,7 @@ resource "github_repository" "test" {
 resource "github_repository_file" "test_pr" {
   repository          = github_repository.test.name
   branch              = github_branch.test_pr.branch
-  file                = "test_pr.py"
+  file                = "test_pr.tf"
   content             = "used to trigger repo's webhook for testing associated mut: ${local.mut}"
   commit_message      = "test file"
   overwrite_on_create = true
@@ -41,7 +41,7 @@ resource "github_repository_pull_request" "test_pr" {
 resource "github_repository_file" "test_push" {
   repository          = github_repository.test.name
   branch              = "master"
-  file                = "test_push.py"
+  file                = "test_push.tf"
   content             = "used to trigger repo's webhook for testing associated mut: ${local.mut}"
   commit_message      = "test webhook push filter"
   overwrite_on_create = true
@@ -51,12 +51,11 @@ resource "github_repository_file" "test_push" {
 }
 
 module "mut_dynamic_github_source" {
-  source                 = "..//"
+  source = "../../../..//"
 
   create_github_token_ssm_param = false
-  github_token_ssm_key = "github-webhook-request-validator-github-token"
-  codebuild_name         = local.mut
-  codebuild_buildspec    = file("buildspec.yaml")
+  github_token_ssm_key          = "mut-terraform-aws-infrastructure-modules-ci-github-token"
+  codebuild_name                = local.mut
   repos = [
     {
       name = github_repository.test.name
@@ -64,22 +63,40 @@ module "mut_dynamic_github_source" {
         environment_variables = [
           {
             name  = "TEST"
-            value = "FOO"
+            value = "foo"
             type  = "PLAINTEXT"
           }
         ]
       }
       filter_groups = [
-        {
-          events     = ["push"]
-          file_paths = ["CHANGELOG.md"]
-        },
-        {
-          events     = ["pull_request"]
-          pr_actions = ["opened", "edited", "synchronize"]
-          file_paths = [".*\\.py$"]
-          head_refs  = ["test-branch"]
-        }
+        [
+          {
+            type = "event"
+            pattern = "push"
+          },
+          {
+            type = "file_paths"
+            pattern = ".+\\.tf$"
+          }
+        ],
+        [
+          {
+            type = "event"
+            pattern = "pull_request"
+          },
+          {
+            type = "pr_actions"
+            pattern = "(opened|edited|reopened)"
+          },
+          {
+            type = "file_paths" 
+            pattern = ".+\\.tf$"
+          },
+          {
+            type = "head_ref"
+            pattern = "test-branch"
+          }
+        ]
       ]
     }
   ]
