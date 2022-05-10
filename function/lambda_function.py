@@ -19,34 +19,44 @@ def lambda_handler(event, context):
         - Payload headers must be mapped to the key `headers`
     """
 
-    payload = json.loads(event['requestPayload']['body'])
-    event = event['requestPayload']['headers']['X-GitHub-Event']
-    repo_name = payload['repository']['name']
-    
-    with open(f'{os.getcwd()}/repo_cfg.json') as f:
-      repo_cfg = json.load(f)[repo_name]
+    try:
+        payload = json.loads(event['requestPayload']['body'])
+        git_event = event['requestPayload']['headers']['X-GitHub-Event']
+        repo_name = payload['repository']['name']
+        
+        with open(f'{os.getcwd()}/repo_cfg.json') as f:
+            repo_cfg = json.load(f)[repo_name]
 
-    if event == "pull_request":
-        # if event was a PR merge
-        if payload['action'] == 'closed' and payload['merged']:
-            source_version = payload['pull_request']['base']['ref']
-        # if event was PR activity that wasn't merged
-        else:
-            source_version = f'pr/{payload["pull_request"]["number"]}'
-    elif event == "push":
-        # gets branch that was pushed to
-        source_version = str(payload['ref'].split('/')[-1])
+        if git_event == "pull_request":
+            if payload['action'] == 'closed' and payload['merged']:
+                # if event was a PR merge use base ref
+                source_version = payload['pull_request']['base']['ref']
+            else:
+                # if event was PR activity that wasn't merged use PR #
+                source_version = f'pr/{payload["pull_request"]["number"]}'
+        elif git_event == "push":
+            # gets branch that was pushed to
+            source_version = str(payload['ref'].split('/')[-1])
 
-    log.debug(f'Source Version: {source_version}')
+        log.debug(f'Source Version: {source_version}')
 
-    log.info(f'Starting CodeBuild project: {os.environ["CODEBUILD_NAME"]}')
+        log.info(f'Starting CodeBuild project: {os.environ["CODEBUILD_NAME"]}')
 
-    response = cb.start_build(
-        projectName=os.environ['CODEBUILD_NAME'],
-        sourceLocationOverride=payload['repository']['html_url'],
-        sourceTypeOverride='GITHUB',
-        sourceVersion=source_version,
-        **repo_cfg['codebuild_cfg']
-    )
+        cb.start_build(
+            projectName=os.environ['CODEBUILD_NAME'],
+            sourceLocationOverride=payload['repository']['html_url'],
+            sourceTypeOverride='GITHUB',
+            sourceVersion=source_version,
+            **repo_cfg['codebuild_cfg']
+        )
 
-    return {'message': 'Build was successfully started'}
+        return {
+            'statusCode': 302,
+            'message': 'Build was successfully started'
+        }
+    except Exception as e:
+        log.error(e, exc_info=True)
+        return {
+            'statusCode': 500,
+            'message': 'Error while processing request'
+        }
