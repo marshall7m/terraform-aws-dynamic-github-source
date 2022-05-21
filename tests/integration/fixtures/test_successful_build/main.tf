@@ -53,8 +53,6 @@ resource "github_repository_file" "test_push" {
 module "mut_dynamic_github_source" {
   source = "../../../..//"
 
-  create_github_token_ssm_param = false
-  github_token_ssm_key          = "mut-terraform-aws-infrastructure-modules-ci-github-token"
   codebuild_name                = local.mut
   repos = [
     {

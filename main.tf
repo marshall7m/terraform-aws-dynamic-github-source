@@ -40,12 +40,6 @@ module "github_webhook_request_validator" {
   github_secret_ssm_description = var.github_secret_ssm_description
   github_secret_ssm_tags        = var.github_secret_ssm_tags
 
-  create_github_token_ssm_param = var.create_github_token_ssm_param
-  github_token_ssm_description  = var.github_token_ssm_description
-  github_token_ssm_key          = var.github_token_ssm_key
-  github_token_ssm_value        = var.github_token_ssm_value
-  github_token_ssm_tags         = var.github_token_ssm_tags
-
   lambda_success_destination_arns = [module.lambda_trigger_codebuild.function_arn]
   async_lambda_invocation         = true
 }
@@ -100,11 +94,11 @@ module "codebuild" {
   name        = var.codebuild_name
   description = var.codebuild_description
 
-  create_source_auth      = var.codebuild_create_source_auth
-  source_auth_token       = var.github_token_ssm_value
+  create_source_auth      = var.codebuild_source_auth_token != null ? true : false
+  source_auth_token       = var.codebuild_source_auth_token
   source_auth_server_type = "GITHUB"
   source_auth_type        = "PERSONAL_ACCESS_TOKEN"
-
+  
   assumable_role_arns = var.codebuild_assumable_role_arns
   artifacts           = local.codebuild_artifacts
   environment         = local.codebuild_environment

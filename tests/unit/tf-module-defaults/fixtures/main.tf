@@ -1,9 +1,6 @@
 module "mut_terraform_infrastructure_modules_defaults" {
   source = "../../../.."
 
-  create_github_token_ssm_param = true
-  github_token_ssm_value = "dummy-value"
-
   repos = [
     {
       name = "test-user/dummy-repo"

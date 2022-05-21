@@ -4,41 +4,6 @@ variable "common_tags" {
   default     = {}
 }
 
-# SSM #
-
-## github-token ##
-
-variable "create_github_token_ssm_param" {
-  description = "Determines if an AWS System Manager Parameter Store value should be created for the Github token"
-  type        = bool
-  default     = true
-}
-
-variable "github_token_ssm_description" {
-  description = "Github token SSM parameter description"
-  type        = string
-  default     = "Github token used to give read access to the payload validator function to get file that differ between commits" #tfsec:ignore:GEN001
-}
-
-variable "github_token_ssm_key" {
-  description = "AWS SSM Parameter Store key for sensitive Github personal token"
-  type        = string
-  default     = "github-payload-validator" #tfsec:ignore:GEN001
-}
-
-variable "github_token_ssm_value" {
-  description = "Registered Github webhook token associated with the Github provider. If not provided, module looks for pre-existing SSM parameter via `github_token_ssm_key`"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "github_token_ssm_tags" {
-  description = "Tags for Github token SSM parameter"
-  type        = map(string)
-  default     = {}
-}
-
 ## github-secret ##
 
 variable "github_secret_ssm_key" {
@@ -204,6 +169,16 @@ variable "codebuild_cache" {
     modes    = optional(list(string))
   })
   default = {}
+}
+
+variable "codebuild_source_auth_token" {
+  description = <<EOF
+  GitHub personal access token used to authorize CodeBuild projects to clone GitHub repos within the Terraform AWS provider's AWS account and region. 
+  If not specified, existing CodeBuild OAUTH or GitHub personal access token authorization is required beforehand.
+  EOF
+  type        = string
+  default     = null
+  sensitive   = true
 }
 
 variable "codebuild_environment" {
