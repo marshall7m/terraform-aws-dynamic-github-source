@@ -138,10 +138,12 @@ module "dynamic_github_source" {
 |------|-------------|
 | api\_deployment\_invoke\_url | API invoke URL the github webhook will ping |
 | codebuild\_arn | ARN of the CodeBuild project will be conditionally triggered from the payload validator Lambda function |
+| request\_validator\_agw\_cw\_log\_group\_name | Name of the CloudWatch log group associated with the API gateway |
 | request\_validator\_cw\_log\_group\_arn | ARN of the Cloudwatch log group associated with the Lambda function that validates the incoming requests |
 | request\_validator\_function\_arn | ARN of the Lambda function that validates incoming requests |
 | request\_validator\_function\_name | Name of the Cloudwatch log group associated with the Lambda function that validates the incoming requests |
 | trigger\_codebuild\_cw\_log\_group\_arn | ARN of the Cloudwatch log group associated with the Lambda function that triggers the downstream CodeBuild project |
+| trigger\_codebuild\_cw\_log\_group\_name | Name of the Cloudwatch log group associated with the Lambda function that triggers the downstream CodeBuild project |
 | trigger\_codebuild\_function\_arn | ARN of the Lambda function that triggers the downstream CodeBuild project with repo specific configurations |
 | trigger\_codebuild\_function\_name | Name of the Lambda function that triggers the downstream CodeBuild project with repo specific configurations |
 

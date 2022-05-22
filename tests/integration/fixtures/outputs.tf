@@ -33,6 +33,11 @@ output "trigger_codebuild_function_name" {
   value       = module.mut_dynamic_github_source.trigger_codebuild_function_name
 }
 
+output "trigger_codebuild_cw_log_group_name" {
+  description = "Name of the Cloudwatch log group associated with the Lambda function that triggers the downstream CodeBuild project"
+  value       = module.mut_dynamic_github_source.trigger_codebuild_cw_log_group_name
+}
+
 output "trigger_codebuild_arn" {
   description = "ARN of the CodeBuild project will be conditionally triggered from the payload validator Lambda function"
   value       = module.mut_dynamic_github_source.codebuild_arn
