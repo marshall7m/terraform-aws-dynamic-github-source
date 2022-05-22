@@ -30,20 +30,22 @@ module "dynamic_github_source" {
   create_github_secret_ssm_param = true
   github_secret_ssm_value        = var.github_secret_ssm_value
   codebuild_buildspec            = file("buildspec.yaml")
-  repos = [
-    {
-      name = "test-repo"
+  repos = {
+    "test-repo" = {
       filter_groups = [
-        {
-          events     = ["push"]
-        }
+        [
+          {
+            type = "event"
+            pattern = "push"
+          }
+        ]
       ]
     }
-  ]
+  }
 }
 ```
 
-Configure repo specific codebuild configurations via `codebuild_cfg` within `repos` list:
+Configure repo specific codebuild configurations via `codebuild_cfg` within `repos`:
 
 ```
 module "dynamic_github_source" {
@@ -52,11 +54,10 @@ module "dynamic_github_source" {
   github_secret_ssm_value        = var.github_secret_ssm_value
   codebuild_name                 = "test-codebuild"
   codebuild_buildspec            = file("buildspec.yaml")
-  repos = [
-    {
-      name = "test-repo"
+  repos = {
+    "test-repo" = {
       codebuild_cfg = {
-        environment_variables = [
+        environmentVariablesOverride = [
           {
             name  = "TEST"
             value = "FOO"
@@ -65,19 +66,37 @@ module "dynamic_github_source" {
         ]
       }
       filter_groups = [
-        {
-          events     = ["push"]
-          file_paths = ["CHANGELOG.md"]
-        },
-        {
-          events     = ["pull_request"]
-          pr_actions = ["opened", "edited", "synchronize"]
-          file_paths = [".*\\.py$"]
-          head_refs  = ["test-branch"]
-        }
+        [
+          {
+            type = "event"
+            pattern = "push"
+          },
+          {
+            type = "file_path"
+            pattern = "CHANGELOG.md"
+          }
+        ],
+        [
+          {
+            type = "event"
+            pattern = "pull_request"
+          },
+          {
+            type = "pr_action"
+            pattern = "(opened|edited|synchronize)"
+          },
+          {
+            type = "file_path"
+            pattern = ".*\\.py$"
+          },
+          {
+            type = "head_ref"
+            pattern = "test-branch"
+          }
+        ]
       ]
     }
-  ]
+  }
 }
 ```
 
@@ -148,13 +167,3 @@ module "dynamic_github_source" {
 | trigger\_codebuild\_function\_name | Name of the Lambda function that triggers the downstream CodeBuild project with repo specific configurations |
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-
-
-## Features:
-- Interval builds:
-  - Runs CodeBuild only within specified time period
-  - Checks if commit is within time period via Lambda function
-
-## TODO:
-- Add CodeBuild report group to check if test buildspec succeeds
-  - Use build-in terraform test resource to check report group status

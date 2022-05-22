@@ -1,9 +1,8 @@
 module "mut_dynamic_github_source_defaults" {
   source = "../../../..//"
 
-  repos = [
-    {
-      name = "test-user/dummy-repo"
+  repos = {
+    "test-user/dummy-repo" = {
       filter_groups = [
         [
           {
@@ -35,6 +34,6 @@ module "mut_dynamic_github_source_defaults" {
         ]
       ]
     }
-  ]
+  }
 }
 
