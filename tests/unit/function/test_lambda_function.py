@@ -17,11 +17,11 @@ def aws_credentials():
     Mocked AWS credentials needed to be set before importing Lambda Functions that define global boto3 clients. 
     This prevents the region_name not specified errors.
     '''
-    os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
-    os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
-    os.environ['AWS_SECURITY_TOKEN'] = 'testing'
-    os.environ['AWS_SESSION_TOKEN'] = 'testing'
-    os.environ['AWS_DEFAULT_REGION'] = 'us-west-2'
+    os.environ.get('AWS_ACCESS_KEY_ID', 'testing')
+    os.environ.get('AWS_SECRET_ACCESS_KEY', 'testing')
+    os.environ.get('AWS_SECURITY_TOKEN', 'testing')
+    os.environ.get('AWS_SESSION_TOKEN', 'testing')
+    os.environ.get('AWS_DEFAULT_REGION', 'us-west-2')
 
 def run_lambda(event=None, context=None):
     '''Imports Lambda function after boto3 client patch has been created to prevent boto3 region_name not specified error'''
