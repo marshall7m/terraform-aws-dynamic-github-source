@@ -1,6 +1,7 @@
 import json
 import logging
 import boto3
+import botocore
 import os
 import re
 import ast
@@ -29,6 +30,8 @@ def lambda_handler(event, context):
         with open(f'{os.getcwd()}/repo_cfg.json') as f:
             repo_cfg = json.load(f)[repo_name]
 
+        log.debug(f'Repo-scoped CodeBuild override attributes:\n{repo_cfg["codebuild_cfg"]}')
+
         if git_event == "pull_request":
             if payload['action'] == 'closed' and payload['merged']:
                 # if event was a PR merge use base ref
@@ -47,27 +50,32 @@ def lambda_handler(event, context):
         try:
             response = cb.start_build(
                 projectName=os.environ['CODEBUILD_NAME'],
-                sourceLocationOverride=payload['repository']['html_url'],
+                sourceLocationOverride=payload['repository']['clone_url'],
                 sourceTypeOverride='GITHUB',
                 sourceVersion=source_version,
                 **repo_cfg['codebuild_cfg']
             )
-        except cb.exceptions.InvalidInputException as e:
+        except botocore.exceptions.ParamValidationError as e:
             log.error(e, exc_info=True)
-            return {
+            response = {
                 'statusCode': 400,
                 'message': 'One or more CodeBuild override attributes are invalid'
             }
+            log.debug(f'Response:\n{response}')
+            return response
 
         log.info(f'Build ID: {response["build"]["id"]}')
-
-        return {
+        response = {
             'statusCode': 302,
             'message': 'Build was successfully started'
         }
+        log.debug(f'Response:\n{response}')
+        return response
     except Exception as e:
         log.error(e, exc_info=True)
-        return {
+        response = {
             'statusCode': 500,
             'message': 'Error while processing request'
         }
+        log.debug(f'Response:\n{response}')
+        return response
