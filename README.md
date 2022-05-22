@@ -26,10 +26,9 @@ Minimal viable configuration:
 
 ```
 module "dynamic_github_source" {
-  source                         = "github.com/marshall7m/terraform-aws-infrastructure-modules-ci"
+  source                         = "github.com/marshall7m/terraform-aws-dynamic-github-source"
   create_github_secret_ssm_param = true
   github_secret_ssm_value        = var.github_secret_ssm_value
-  github_token_ssm_value         = var.github_token
   codebuild_buildspec            = file("buildspec.yaml")
   repos = [
     {
@@ -48,10 +47,9 @@ Configure repo specific codebuild configurations via `codebuild_cfg` within `rep
 
 ```
 module "dynamic_github_source" {
-  source                         = "github.com/marshall7m/terraform-aws-infrastructure-modules-ci"
+  source                         = "github.com/marshall7m/terraform-aws-dynamic-github-source"
   create_github_secret_ssm_param = true
   github_secret_ssm_value        = var.github_secret_ssm_value
-  github_token_ssm_value         = var.github_token
   codebuild_name                 = "test-codebuild"
   codebuild_buildspec            = file("buildspec.yaml")
   repos = [
@@ -88,7 +86,7 @@ module "dynamic_github_source" {
 
 | Name | Version |
 |------|---------|
-| terraform | >=0.15.0 |
+| terraform | >=1.0.0 |
 | aws | >= 2.23 |
 | github | >= 4.4.0 |
 
@@ -115,39 +113,37 @@ module "dynamic_github_source" {
 | codebuild\_cw\_stream\_name | CloudWatch stream name | `string` | `null` | no |
 | codebuild\_description | CodeBuild project description | `string` | `null` | no |
 | codebuild\_environment | Codebuild environment configuration | <pre>object({<br>    compute_type                = optional(string)<br>    image                       = optional(string)<br>    type                        = optional(string)<br>    image_pull_credentials_type = optional(string)<br>    environment_variables = optional(list(object({<br>      name  = string<br>      value = string<br>      type  = optional(string)<br>    })))<br>    privileged_mode = optional(bool)<br>    certificate     = optional(string)<br>    registry_credential = optional(object({<br>      credential          = optional(string)<br>      credential_provider = optional(string)<br>    }))<br>  })</pre> | `{}` | no |
-| codebuild\_name | Name of Codebuild project | `string` | `"infrastructure-modules-ci-build"` | no |
+| codebuild\_name | Name of Codebuild project | `string` | `"dynamic-github-source-build"` | no |
 | codebuild\_role\_arn | Existing IAM role ARN to attach to CodeBuild project | `string` | `null` | no |
 | codebuild\_role\_policy\_statements | IAM policy statements to add to CodeBuild project's role | <pre>list(object({<br>    sid       = optional(string)<br>    effect    = string<br>    actions   = list(string)<br>    resources = list(string)<br>  }))</pre> | `[]` | no |
 | codebuild\_s3\_log\_bucket | Name of S3 bucket where the build project's logs will be stored | `string` | `null` | no |
 | codebuild\_s3\_log\_encryption | Determines if encryption should be disabled for the build project's S3 logs | `bool` | `false` | no |
 | codebuild\_s3\_log\_key | Bucket path where the build project's logs will be stored (don't include bucket name) | `string` | `null` | no |
 | codebuild\_secondary\_artifacts | Build project's secondary output artifacts configuration | <pre>object({<br>    type                   = optional(string)<br>    artifact_identifier    = optional(string)<br>    encryption_disabled    = optional(bool)<br>    override_artifact_name = optional(bool)<br>    location               = optional(string)<br>    name                   = optional(string)<br>    namespace_type         = optional(string)<br>    packaging              = optional(string)<br>    path                   = optional(string)<br>  })</pre> | `{}` | no |
+| codebuild\_source\_auth\_token | GitHub personal access token used to authorize CodeBuild projects to clone GitHub repos within the Terraform AWS provider's AWS account and region. <br>  If not specified, existing CodeBuild OAUTH or GitHub personal access token authorization is required beforehand. | `string` | `null` | no |
 | codebuild\_tags | Tags to attach to Codebuild project | `map(string)` | `{}` | no |
 | codebuild\_timeout | Minutes till build run is timed out | `string` | `null` | no |
 | common\_tags | Tags to add to all resources | `map(string)` | `{}` | no |
-| create\_github\_token\_ssm\_param | Determines if an AWS System Manager Parameter Store value should be created for the Github token | `bool` | `true` | no |
 | enable\_codebuild\_cw\_logs | Determines if CloudWatch logs should be enabled | `bool` | `true` | no |
 | enable\_codebuild\_s3\_logs | Determines if S3 logs should be enabled | `bool` | `false` | no |
 | github\_secret\_ssm\_description | Github secret SSM parameter description | `string` | `"Secret value for Github Webhooks"` | no |
 | github\_secret\_ssm\_key | SSM parameter store key for github webhook secret. Secret used within Lambda function for Github request validation. | `string` | `"github-webhook-secret"` | no |
 | github\_secret\_ssm\_tags | Tags for Github webhook secret SSM parameter | `map(string)` | `{}` | no |
-| github\_token\_ssm\_description | Github token SSM parameter description | `string` | `"Github token used to give read access to the payload validator function to get file that differ between commits"` | no |
-| github\_token\_ssm\_key | AWS SSM Parameter Store key for sensitive Github personal token | `string` | `"github-payload-validator"` | no |
-| github\_token\_ssm\_tags | Tags for Github token SSM parameter | `map(string)` | `{}` | no |
-| github\_token\_ssm\_value | Registered Github webhook token associated with the Github provider. If not provided, module looks for pre-existing SSM parameter via `github_token_ssm_key` | `string` | `""` | no |
-| lambda\_trigger\_codebuild\_function\_name | Name of AWS Lambda function that will start the AWS CodeBuild with the override configurations | `string` | `"infrastructure-modules-ci-trigger-build"` | no |
-| repos | List of named repos to create github webhooks for and their respective filter groups used to select<br>what type of activity will trigger the associated Codebuild.<br>Params:<br>  `name`: Repository name<br>  `filter_groups`: {<br>    `events` - List of Github Webhook events that will invoke the API. Currently only supports: `push` and `pull_request`.<br>    `pr_actions` - List of pull request actions (e.g. opened, edited, reopened, closed). See more under the action key at: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request<br>    `base_refs` - List of base refs<br>    `head_refs` - List of head refs<br>    `actor_account_ids` - List of Github user IDs<br>    `commit_messages` - List of commit messages<br>    `file_paths` - List of file paths<br>    `exclude_matched_filter` - If set to true, labels filter group as invalid if it is matched<br>  }<br>  `codebuild_cfg`: CodeBuild configurations specifically for the repository | <pre>list(object({<br>    name = string<br><br>    filter_groups = optional(list(object({<br>      events                 = list(string)<br>      pr_actions             = optional(list(string))<br>      base_refs              = optional(list(string))<br>      head_refs              = optional(list(string))<br>      actor_account_ids      = optional(list(string))<br>      commit_messages        = optional(list(string))<br>      file_paths             = optional(list(string))<br>      exclude_matched_filter = optional(bool)<br>    })))<br><br>    codebuild_cfg = optional(object({<br>      buildspec = optional(string)<br>      timeout   = optional(string)<br>      cache = optional(object({<br>        type     = optional(string)<br>        location = optional(string)<br>        modes    = optional(list(string))<br>      }))<br>      report_build_status = optional(bool)<br>      environment_type    = optional(string)<br>      compute_type        = optional(string)<br>      image               = optional(string)<br>      environment_variables = optional(list(object({<br>        name  = string<br>        value = string<br>        type  = optional(string)<br>      })))<br>      privileged_mode = optional(bool)<br>      certificate     = optional(string)<br>      artifacts = optional(object({<br>        type                   = optional(string)<br>        artifact_identifier    = optional(string)<br>        encryption_disabled    = optional(bool)<br>        override_artifact_name = optional(bool)<br>        location               = optional(string)<br>        name                   = optional(string)<br>        namespace_type         = optional(string)<br>        packaging              = optional(string)<br>        path                   = optional(string)<br>      }))<br>      secondary_artifacts = optional(object({<br>        type                   = optional(string)<br>        artifact_identifier    = optional(string)<br>        encryption_disabled    = optional(bool)<br>        override_artifact_name = optional(bool)<br>        location               = optional(string)<br>        name                   = optional(string)<br>        namespace_type         = optional(string)<br>        packaging              = optional(string)<br>        path                   = optional(string)<br>      }))<br>      role_arn = optional(string)<br>      logs_cfg = optional(object({<br>        cloudWatchLogs = optional(object({<br>          status     = string<br>          groupName  = string<br>          streamName = string<br>        }))<br>        s3Logs = optional(object({<br>          status   = string<br>          location = string<br>        }))<br>      }))<br>    }))<br>  }))</pre> | `[]` | no |
+| lambda\_trigger\_codebuild\_function\_name | Name of AWS Lambda function that will start the AWS CodeBuild with the override configurations | `string` | `"dynamic-github-source-build-trigger"` | no |
+| repos | List of named repos to create github webhooks for and their respective filter groups used to select<br>what type of activity will trigger the associated Codebuild.<br>Params:<br>  `name`: Repository name<br>  `filter_groups`: List of filter groups that the Github event has to meet. The event has to meet all filters of atleast one group in order to succeed. <br>    [<br>      [ (Filter Group)<br>        {<br>          `type`: The type of filter<br>            (<br>              `event` - List of Github Webhook events that will invoke the API. Currently only supports: `push` and `pull_request`.<br>              `pr_actions` - List of pull request actions (e.g. opened, edited, reopened, closed). See more under the action key at: https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#pull_request<br>              `base_refs` - List of base refs<br>              `head_refs` - List of head refs<br>              `actor_account_ids` - List of Github user IDs<br>              `commit_messages` - List of commit messages<br>              `file_paths` - List of file paths<br>            )<br>          `pattern`: Regex pattern that is searched for within the related event attribute. For `type` = `event`, use a single Github webhook event and not a regex pattern.<br>          `exclude_matched_filter` - If set to true, labels filter group as invalid if it is matched<br>        }<br>      ]<br>    ]<br>  `codebuild_cfg`: CodeBuild configurations used specifically for the repository | <pre>list(object({<br>    name = string<br><br>    filter_groups = optional(list(list(object({<br>      type                   = string<br>      pattern                = string<br>      exclude_matched_filter = optional(bool)<br>    }))))<br><br>    codebuild_cfg = optional(object({<br>      buildspec = optional(string)<br>      timeout   = optional(string)<br>      cache = optional(object({<br>        type     = optional(string)<br>        location = optional(string)<br>        modes    = optional(list(string))<br>      }))<br>      report_build_status = optional(bool)<br>      environment_type    = optional(string)<br>      compute_type        = optional(string)<br>      image               = optional(string)<br>      environment_variables = optional(list(object({<br>        name  = string<br>        value = string<br>        type  = optional(string)<br>      })))<br>      privileged_mode = optional(bool)<br>      certificate     = optional(string)<br>      artifacts = optional(object({<br>        type                   = optional(string)<br>        artifact_identifier    = optional(string)<br>        encryption_disabled    = optional(bool)<br>        override_artifact_name = optional(bool)<br>        location               = optional(string)<br>        name                   = optional(string)<br>        namespace_type         = optional(string)<br>        packaging              = optional(string)<br>        path                   = optional(string)<br>      }))<br>      secondary_artifacts = optional(object({<br>        type                   = optional(string)<br>        artifact_identifier    = optional(string)<br>        encryption_disabled    = optional(bool)<br>        override_artifact_name = optional(bool)<br>        location               = optional(string)<br>        name                   = optional(string)<br>        namespace_type         = optional(string)<br>        packaging              = optional(string)<br>        path                   = optional(string)<br>      }))<br>      role_arn = optional(string)<br>      logs_cfg = optional(object({<br>        cloudWatchLogs = optional(object({<br>          status     = string<br>          groupName  = string<br>          streamName = string<br>        }))<br>        s3Logs = optional(object({<br>          status   = string<br>          location = string<br>        }))<br>      }))<br>    }))<br>  }))</pre> | `[]` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| api\_invoke\_url | API invoke URL the github webhook will ping |
+| api\_deployment\_invoke\_url | API invoke URL the github webhook will ping |
 | codebuild\_arn | ARN of the CodeBuild project will be conditionally triggered from the payload validator Lambda function |
 | request\_validator\_cw\_log\_group\_arn | ARN of the Cloudwatch log group associated with the Lambda function that validates the incoming requests |
 | request\_validator\_function\_arn | ARN of the Lambda function that validates incoming requests |
+| request\_validator\_function\_name | Name of the Cloudwatch log group associated with the Lambda function that validates the incoming requests |
 | trigger\_codebuild\_cw\_log\_group\_arn | ARN of the Cloudwatch log group associated with the Lambda function that triggers the downstream CodeBuild project |
 | trigger\_codebuild\_function\_arn | ARN of the Lambda function that triggers the downstream CodeBuild project with repo specific configurations |
+| trigger\_codebuild\_function\_name | Name of the Lambda function that triggers the downstream CodeBuild project with repo specific configurations |
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 

@@ -29,14 +29,14 @@ locals {
 module "github_webhook_request_validator" {
   source = "github.com/marshall7m/terraform-aws-github-webhook"
 
-  create_api = true
+  create_api      = true
   api_name        = var.api_name
   api_description = var.api_description
   repos = [for repo in var.repos : {
     name          = repo.name
     filter_groups = repo.filter_groups
   }]
-  github_secret_ssm_key         = var.github_secret_ssm_key        
+  github_secret_ssm_key         = var.github_secret_ssm_key
   github_secret_ssm_description = var.github_secret_ssm_description
   github_secret_ssm_tags        = var.github_secret_ssm_tags
 
@@ -98,7 +98,7 @@ module "codebuild" {
   source_auth_token       = var.codebuild_source_auth_token
   source_auth_server_type = "GITHUB"
   source_auth_type        = "PERSONAL_ACCESS_TOKEN"
-  
+
   assumable_role_arns = var.codebuild_assumable_role_arns
   artifacts           = local.codebuild_artifacts
   environment         = local.codebuild_environment

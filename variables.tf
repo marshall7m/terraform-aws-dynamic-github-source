@@ -58,8 +58,8 @@ EOF
     name = string
 
     filter_groups = optional(list(list(object({
-      type = string
-      pattern = string
+      type                   = string
+      pattern                = string
       exclude_matched_filter = optional(bool)
     }))))
 
@@ -126,7 +126,7 @@ EOF
 variable "lambda_trigger_codebuild_function_name" {
   description = "Name of AWS Lambda function that will start the AWS CodeBuild with the override configurations"
   type        = string
-  default     = "infrastructure-modules-ci-trigger-build"
+  default     = "dynamic-github-source-build-trigger"
 }
 
 # Codebuild #
@@ -134,7 +134,7 @@ variable "lambda_trigger_codebuild_function_name" {
 variable "codebuild_name" {
   description = "Name of Codebuild project"
   type        = string
-  default     = "infrastructure-modules-ci-build"
+  default     = "dynamic-github-source-build"
 }
 
 variable "codebuild_description" {
