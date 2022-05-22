@@ -23,6 +23,8 @@ def lambda_handler(event, context):
         payload = json.loads(event['requestPayload']['body'])
         git_event = event['requestPayload']['headers']['X-GitHub-Event']
         repo_name = payload['repository']['name']
+
+        log.debug(f'Repo: {repo_name}')
         
         with open(f'{os.getcwd()}/repo_cfg.json') as f:
             repo_cfg = json.load(f)[repo_name]
@@ -42,13 +44,22 @@ def lambda_handler(event, context):
 
         log.info(f'Starting CodeBuild project: {os.environ["CODEBUILD_NAME"]}')
 
-        cb.start_build(
-            projectName=os.environ['CODEBUILD_NAME'],
-            sourceLocationOverride=payload['repository']['html_url'],
-            sourceTypeOverride='GITHUB',
-            sourceVersion=source_version,
-            **repo_cfg['codebuild_cfg']
-        )
+        try:
+            response = cb.start_build(
+                projectName=os.environ['CODEBUILD_NAME'],
+                sourceLocationOverride=payload['repository']['html_url'],
+                sourceTypeOverride='GITHUB',
+                sourceVersion=source_version,
+                **repo_cfg['codebuild_cfg']
+            )
+        except cb.exceptions.InvalidInputException as e:
+            log.error(e, exc_info=True)
+            return {
+                'statusCode': 400,
+                'message': 'One or more CodeBuild override attributes are invalid'
+            }
+
+        log.info(f'Build ID: {response["build"]["id"]}')
 
         return {
             'statusCode': 302,
