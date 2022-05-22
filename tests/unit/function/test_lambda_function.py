@@ -50,7 +50,7 @@ repo_cfg = {
                     'X-GitHub-Event': 'push'
                 },
                 'body': {
-                    'repository': {'name': 'dummy-repo', 'html_url': 'https://github.com/user/dummy-repo.git'},
+                    'repository': {'name': 'dummy-repo', 'clone_url': 'https://github.com/user/dummy-repo.git'},
                     'ref': 'ref/heads/master'
                 }
             }
@@ -66,7 +66,7 @@ repo_cfg = {
                     'X-GitHub-Event': 'push'
                 },
                 'body': {
-                    'repository': {'name': 'dummy-repo', 'html_url': 'https://github.com/user/dummy-repo.git'},
+                    'repository': {'name': 'dummy-repo', 'clone_url': 'https://github.com/user/dummy-repo.git'},
                     'action': 'closed',
                     'merged': True,
                     'pull_request': {
