@@ -7,23 +7,6 @@ locals {
     type         = "LINUX_CONTAINER"
     image        = "aws/codebuild/standard:3.0"
   })
-
-  codebuild_override_keys = {
-    buildspec             = "buildspecOverride"
-    timeout               = "timeoutInMinutesOverride"
-    cache                 = "cacheOverride"
-    privileged_mode       = "privilegedModeOverride"
-    report_build_status   = "reportBuildStatusOverride"
-    environment_type      = "environmentTypeOverride"
-    compute_type          = "computeTypeOverride"
-    image                 = "imageOverride"
-    environment_variables = "environmentVariablesOverride"
-    artifacts             = "artifactsOverride"
-    secondary_artifacts   = "secondaryArtifactsOverride"
-    role_arn              = "serviceRoleOverride"
-    logs_cfg              = "logsConfigOverride"
-    certificate           = "certificateOverride"
-  }
 }
 
 module "github_webhook_request_validator" {
@@ -32,9 +15,9 @@ module "github_webhook_request_validator" {
   create_api      = true
   api_name        = var.api_name
   api_description = var.api_description
-  repos = [for repo in var.repos : {
-    name          = repo.name
-    filter_groups = repo.filter_groups
+  repos = [for name, cfg in var.repos : {
+    name          = name
+    filter_groups = cfg.filter_groups
   }]
   github_secret_ssm_key         = var.github_secret_ssm_key
   github_secret_ssm_description = var.github_secret_ssm_description
@@ -129,11 +112,6 @@ data "archive_file" "lambda_function" {
 }
 
 resource "local_file" "repo_cfg" {
-  content = jsonencode({ for repo in var.repos :
-    repo.name => {
-      #converts terraform codebuild params to python boto3 start_build() params
-      codebuild_cfg = repo.codebuild_cfg != null ? { for key in keys(repo.codebuild_cfg) : local.codebuild_override_keys[key] => lookup(repo.codebuild_cfg, key) if lookup(repo.codebuild_cfg, key) != null } : {}
-    }
-  })
+  content  = jsonencode(var.repos)
   filename = "${path.module}/function/repo_cfg.json"
 }
