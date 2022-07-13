@@ -30,7 +30,7 @@ env:
 jobs:
   precommit:
     runs-on: ubuntu-latest
-    container: ghcr.io/marshall7m/terrace:v0.1.0
+    container: ghcr.io/marshall7m/terrace:v0.1.9
     permissions:
       id-token: write
       contents: read
@@ -45,7 +45,7 @@ jobs:
   unit:
     needs: precommit
     runs-on: ubuntu-latest
-    container: ghcr.io/marshall7m/terrace:v0.1.0
+    container: ghcr.io/marshall7m/terrace:v0.1.9
     permissions:
       id-token: write
       contents: read
@@ -87,7 +87,7 @@ jobs:
   integration:
     needs: [precommit, unit]
     runs-on: ubuntu-latest
-    container: ghcr.io/marshall7m/terrace:v0.1.0
+    container: ghcr.io/marshall7m/terrace:v0.1.9
     permissions:
       id-token: write
       contents: read
