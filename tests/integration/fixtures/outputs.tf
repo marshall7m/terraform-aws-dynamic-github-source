@@ -45,5 +45,5 @@ output "codebuild_arn" {
 
 output "codebuild_name" {
   description = "Name of the CodeBuild project that will be triggered by the Lambda Function"
-  value = module.mut_dynamic_github_source.codebuild_name
+  value       = module.mut_dynamic_github_source.codebuild_name
 }

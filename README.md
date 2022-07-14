@@ -171,7 +171,8 @@ module "dynamic_github_source" {
 | Name | Description |
 |------|-------------|
 | <a name="output_api_deployment_invoke_url"></a> [api\_deployment\_invoke\_url](#output\_api\_deployment\_invoke\_url) | API invoke URL the github webhook will ping |
-| <a name="output_codebuild_arn"></a> [codebuild\_arn](#output\_codebuild\_arn) | ARN of the CodeBuild project will be conditionally triggered from the payload validator Lambda function |
+| <a name="output_codebuild_arn"></a> [codebuild\_arn](#output\_codebuild\_arn) | ARN of the CodeBuild project that will be triggered by the Lambda Function |
+| <a name="output_codebuild_name"></a> [codebuild\_name](#output\_codebuild\_name) | Name of the CodeBuild project that will be triggered by the Lambda Function |
 | <a name="output_request_validator_agw_cw_log_group_name"></a> [request\_validator\_agw\_cw\_log\_group\_name](#output\_request\_validator\_agw\_cw\_log\_group\_name) | Name of the CloudWatch log group associated with the API gateway |
 | <a name="output_request_validator_cw_log_group_arn"></a> [request\_validator\_cw\_log\_group\_arn](#output\_request\_validator\_cw\_log\_group\_arn) | ARN of the Cloudwatch log group associated with the Lambda function that validates the incoming requests |
 | <a name="output_request_validator_function_arn"></a> [request\_validator\_function\_arn](#output\_request\_validator\_function\_arn) | ARN of the Lambda function that validates incoming requests |

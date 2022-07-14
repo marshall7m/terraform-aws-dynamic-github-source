@@ -23,8 +23,8 @@ module "github_webhook_request_validator" {
   github_secret_ssm_description = var.github_secret_ssm_description
   github_secret_ssm_tags        = var.github_secret_ssm_tags
 
-  lambda_destination_on_success = module.lambda_trigger_codebuild.lambda_function_arn
-  async_lambda_invocation       = true
+  lambda_destination_on_success    = module.lambda_trigger_codebuild.lambda_function_arn
+  async_lambda_invocation          = true
   lambda_create_async_event_config = true
   lambda_attach_async_event_policy = true
 }
