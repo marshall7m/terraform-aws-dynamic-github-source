@@ -38,8 +38,12 @@ output "trigger_codebuild_cw_log_group_name" {
   value       = module.mut_dynamic_github_source.trigger_codebuild_cw_log_group_name
 }
 
-output "trigger_codebuild_arn" {
-  description = "ARN of the CodeBuild project will be conditionally triggered from the payload validator Lambda function"
+output "codebuild_arn" {
+  description = "ARN of the CodeBuild project that will be triggered by the Lambda Function"
   value       = module.mut_dynamic_github_source.codebuild_arn
 }
 
+output "codebuild_name" {
+  description = "Name of the CodeBuild project that will be triggered by the Lambda Function"
+  value = module.mut_dynamic_github_source.codebuild_name
+}

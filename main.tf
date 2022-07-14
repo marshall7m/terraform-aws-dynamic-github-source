@@ -10,7 +10,7 @@ locals {
 }
 
 module "github_webhook_request_validator" {
-  source = "github.com/marshall7m/terraform-aws-github-webhook"
+  source = "github.com/marshall7m/terraform-aws-github-webhook?ref=v0.1.4"
 
   create_api      = true
   api_name        = var.api_name
@@ -23,8 +23,10 @@ module "github_webhook_request_validator" {
   github_secret_ssm_description = var.github_secret_ssm_description
   github_secret_ssm_tags        = var.github_secret_ssm_tags
 
-  lambda_success_destination_arns = [module.lambda_trigger_codebuild.function_arn]
-  async_lambda_invocation         = true
+  lambda_destination_on_success = module.lambda_trigger_codebuild.lambda_function_arn
+  async_lambda_invocation       = true
+  lambda_create_async_event_config = true
+  lambda_attach_async_event_policy = true
 }
 
 data "aws_iam_policy_document" "lambda" {
@@ -46,33 +48,48 @@ resource "aws_iam_policy" "lambda" {
   policy = data.aws_iam_policy_document.lambda.json
 }
 
-module "lambda_trigger_codebuild" {
-  source           = "github.com/marshall7m/terraform-aws-lambda"
-  filename         = data.archive_file.lambda_function.output_path
-  source_code_hash = data.archive_file.lambda_function.output_base64sha256
-  function_name    = var.lambda_trigger_codebuild_function_name
-  handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.8"
-  allowed_to_invoke = [
-    {
-      statement_id = "LambdaInvokeAccess"
-      principal    = "lambda.amazonaws.com"
-      arn          = module.github_webhook_request_validator.function_arn
-    }
-  ]
-  enable_cw_logs = true
+resource "local_file" "repo_cfg" {
+  content  = jsonencode(var.repos)
+  filename = "${path.module}/function/repo_cfg.json"
+}
 
-  env_vars = {
+module "lambda_trigger_codebuild" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "3.3.1"
+
+  function_name = var.lambda_trigger_codebuild_function_name
+  description   = "Start the target CodeBuild project with GitHub source repository-specific configurations"
+  handler       = "lambda_function.lambda_handler"
+  runtime       = "python3.8"
+  source_path   = "${path.module}/function"
+
+  allowed_triggers = {
+    LambdaInvokeAccess = {
+      service    = "lambda"
+      source_arn = module.github_webhook_request_validator.function_arn
+    }
+  }
+  environment_variables = {
     CODEBUILD_NAME = var.codebuild_name
   }
-  custom_role_policy_arns = [
+
+  publish = true
+  policies = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
     aws_iam_policy.lambda.arn
+  ]
+  attach_policies               = true
+  number_of_policies            = 2
+  role_force_detach_policies    = true
+  attach_cloudwatch_logs_policy = true
+
+  depends_on = [
+    local_file.repo_cfg
   ]
 }
 
 module "codebuild" {
-  source = "github.com/marshall7m/terraform-aws-codebuild"
+  source = "github.com/marshall7m/terraform-aws-codebuild?ref=v0.1.0"
 
   name        = var.codebuild_name
   description = var.codebuild_description
@@ -100,18 +117,4 @@ module "codebuild" {
   cw_logs                    = var.enable_codebuild_cw_logs
   role_arn                   = var.codebuild_role_arn
   role_policy_statements     = var.codebuild_role_policy_statements
-}
-
-data "archive_file" "lambda_function" {
-  type        = "zip"
-  source_dir  = "${path.module}/function"
-  output_path = "${path.module}/function.zip"
-  depends_on = [
-    local_file.repo_cfg
-  ]
-}
-
-resource "local_file" "repo_cfg" {
-  content  = jsonencode(var.repos)
-  filename = "${path.module}/function/repo_cfg.json"
 }
